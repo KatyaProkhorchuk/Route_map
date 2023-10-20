@@ -117,5 +117,3 @@ def get_path(users, connection, map_widget):
 
 def delete(map_widget):
     map_widget.delete_all_marker()
-def get_path_all(db, connection, map_widget):
-    pass
