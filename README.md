@@ -29,6 +29,8 @@
 ![Alt text](image-3.png)
 
 
+video https://disk.yandex.ru/i/Wfk1JjMf4OFIKw
+
 для запуска 
 
 pip install -r requirements.txt
