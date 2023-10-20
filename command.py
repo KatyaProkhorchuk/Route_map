@@ -1,7 +1,9 @@
 import sqlalchemy as db
 import tkinter as tk
 import datetime
+from tkinter import messagebox
 marker = []
+marker_path = []
 def setting_db():
     engine = db.create_engine('sqlite:///users.db')
     connection = engine.connect()
@@ -21,7 +23,11 @@ def setting_db():
 def add_person(users, connection):
     def add_person_in_db(users):
         name = name_entry.get()
-        time = datetime.datetime.strptime(datetime_entry.get(), "%Y-%m-%d %H:%M:%S")
+        try:
+            time = datetime.datetime.strptime(datetime_entry.get(), "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            messagebox.showerror("Ошибка", "Некорректный формат времени. Используйте 'ГГГГ-ММ-ДД ЧЧ:ММ:СС'.")
+            return
         latitude = float(latitude_entry.get())
         longitude = float(longitude_entry.get())
         insert_query = users.insert().values(name=name, time = time, latitude = latitude, longtitude=longitude)
@@ -30,7 +36,7 @@ def add_person(users, connection):
         select_all_result = connection.execute(select_all_query)
         print(select_all_result.fetchall())
     top = tk.Toplevel()
-    top.title("Добавить персонажа")
+    top.title("Добавить данные")
     name = tk.Label(top, text="Имя персонажа:")
     name.pack()
     name_entry = tk.Entry(top)
@@ -62,8 +68,54 @@ def get_visible_coordinate(users, connection, map_widget):
             latitude = row["latitude"]
             longitude = row["longtitude"]
             marker.append(map_widget.set_marker(latitude, longitude, text = character_name))
-            # Отобразите последние координаты на карте
-            # mar.add_marker(latitude, longitude, character_name)
+            
+def get_path(users, connection, map_widget):
+    def show_path():
+        name = name_entry.get()
+        try:
+            start_time = datetime.datetime.strptime(start_time_entry.get(), "%Y-%m-%d %H:%M:%S")
+            end_time = datetime.datetime.strptime(end_time_entry.get(), "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            messagebox.showerror("Ошибка", "Некорректный формат времени. Используйте 'ГГГГ-ММ-ДД ЧЧ:ММ:СС'.")
+            return
+        top.grab_release()
+        query = db.select([users.c.latitude, users.c.longtitude, users.c.time]).where(
+            (users.c.name == name) & (users.c.time >= start_time) & (users.c.time <= end_time)
+        )
+        result = connection.execute(query).fetchall()
+        print(result)
+        marker_path = []
+        if result:
+            for row in result:
+                latitude = row["latitude"]
+                longitude = row["longtitude"]
+                time = row["time"]
+                marker_path.append(map_widget.set_marker(latitude, longitude, text = time))
+            print(len(marker_path))
+            if len(marker_path) > 1:
+                
+                path = map_widget.set_path([i.position for i in marker_path])
+    top = tk.Toplevel()
+    top.title("Посмотреть путь для...")
+    name_label = tk.Label(top, text="Имя персонажа:")
+    name_label.pack()
+    name_entry = tk.Entry(top)
+    name_entry.pack()
+    
+    start_time_label = tk.Label(top, text="Начальное время (ГГГГ-ММ-ДД ЧЧ:ММ:СС):")
+    start_time_label.pack()
+    start_time_entry = tk.Entry(top)
+    start_time_entry.pack()
 
-def get_path():
+    end_time_label = tk.Label(top, text="Конечное время (ГГГГ-ММ-ДД ЧЧ:ММ:СС):")
+    end_time_label.pack()
+    end_time_entry = tk.Entry(top)
+    end_time_entry.pack()
+
+    show_button = tk.Button(top, text="Отобразить маршрут", command=show_path)
+    show_button.pack()
+
+def delete(map_widget):
+    map_widget.delete_all_marker()
+def get_path_all(db, connection, map_widget):
     pass
